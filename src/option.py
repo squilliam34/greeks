@@ -68,3 +68,22 @@ class Option:
             return self.K*self.T*np.exp(-self.r*self.T)*norm.cdf(self.d2)
         elif self.option_type == 'put':
             return -self.K*self.T*np.exp(-self.r*self.T)*norm.cdf(-self.d2)
+
+    def __repr__(self):
+        return (
+            f"Option("
+            f"S={self.S}, "
+            f"K={self.K}, "
+            f"T={self.T}, "
+            f"sigma={self.sigma}, "
+            f"type='{self.option_type}')"
+        )
+
+    def greeks(self):
+        return {
+            "delta": self.delta(),
+            "gamma": self.gamma(),
+            "vega": self.vega(),
+            "theta": self.theta(),
+            "rho": self.rho()
+        }
