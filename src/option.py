@@ -17,12 +17,16 @@ class Option:
         self.option_type = option_type
 
         # Calculate d1 and d2 from Black-Scholes
-        self.d1 = (
-            np.log(self.S/self.K)
-            + (self.r + 0.5*self.sigma**2)*self.T
-        ) / (self.sigma*np.sqrt(self.T))
+        @property
+        def d1(self):
+            return (
+                np.log(self.S/self.K)
+                + (self.r + 0.5*self.sigma**2)*self.T
+            ) / (self.sigma*np.sqrt(self.T))
 
-        self.d2 = self.d1 - self.sigma*np.sqrt(self.T)
+        @property
+        def d2(self):
+            return self.d1 - self.sigma*np.sqrt(self.T)
 
     def black_scholes(self):
         """Calculates the price of the option according Black-Scholes"""
