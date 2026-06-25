@@ -106,7 +106,7 @@ class Option:
         up = self._copy_with(T=self.T + h)
         down = self._copy_with(T=self.T - h)
 
-        return (
+        return -(
             up.black_scholes()
             - down.black_scholes()
         ) / (2*h)
