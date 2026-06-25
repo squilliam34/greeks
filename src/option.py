@@ -16,17 +16,17 @@ class Option:
         self.sigma = sigma
         self.option_type = option_type
 
-        # Calculate d1 and d2 from Black-Scholes
-        @property
-        def d1(self):
-            return (
-                np.log(self.S/self.K)
-                + (self.r + 0.5*self.sigma**2)*self.T
-            ) / (self.sigma*np.sqrt(self.T))
+    # Calculate d1 and d2 from Black-Scholes
+    @property
+    def d1(self):
+        return (
+            np.log(self.S/self.K)
+            + (self.r + 0.5*self.sigma**2)*self.T
+        ) / (self.sigma*np.sqrt(self.T))
 
-        @property
-        def d2(self):
-            return self.d1 - self.sigma*np.sqrt(self.T)
+    @property
+    def d2(self):
+        return self.d1 - self.sigma*np.sqrt(self.T)
 
     def black_scholes(self):
         """Calculates the price of the option according Black-Scholes"""
@@ -68,6 +68,71 @@ class Option:
             return self.K*self.T*np.exp(-self.r*self.T)*norm.cdf(self.d2)
         elif self.option_type == 'put':
             return -self.K*self.T*np.exp(-self.r*self.T)*norm.cdf(-self.d2)
+
+    # Finite difference greeks
+    def finite_diff_delta(self, h=0.01):
+        """Calculate delta using the finite difference"""
+        up = self._copy_with(S=self.S + h)
+        down = self._copy_with(S=self.S - h)
+
+        return (
+            up.black_scholes()
+            - down.black_scholes()
+        ) / (2 * h)
+
+    def finite_diff_gamma(self, h=0.01):
+        """Calculate gamma using the finite difference"""
+        up = self._copy_with(S=self.S + h)
+        down = self._copy_with(S=self.S - h)
+
+        return (
+            up.black_scholes()
+            - 2*self.black_scholes()
+            + down.black_scholes()
+        ) / h**2
+
+    def finite_diff_vega(self, h=0.001):
+        """Calculate vega using the finite difference"""
+        up = self._copy_with(sigma=self.sigma + h)
+        down = self._copy_with(sigma=self.sigma - h)
+
+        return (
+            up.black_scholes()
+            - down.black_scholes()
+        ) / (2*h)
+
+    def finite_diff_theta(self, h=1/365):
+        """Calculate theta using the finite difference"""
+        up = self._copy_with(T=self.T + h)
+        down = self._copy_with(T=self.T - h)
+
+        return (
+            up.black_scholes()
+            - down.black_scholes()
+        ) / (2*h)
+
+    def finite_diff_rho(self, h=0.0001):
+        """Calculate rho using the finite difference"""
+        up = self._copy_with(r=self.r + h)
+        down = self._copy_with(r=self.r - h)
+
+        return (
+            up.black_scholes()
+            - down.black_scholes()
+        ) / (2*h)
+
+    # Util functions
+    def _copy_with(self, **kwargs):
+        params = {
+            "S": self.S,
+            "T": self.T,
+            "r": self.r,
+            "K": self.K,
+            "sigma": self.sigma,
+            "option_type": self.option_type
+        }
+        params.update(kwargs)
+        return Option(**params)
 
     def __repr__(self):
         return (
