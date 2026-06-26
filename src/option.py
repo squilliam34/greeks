@@ -123,42 +123,47 @@ class Option:
         ) / (2*h)
 
     ############## Implied Volatility ##############
-    def implied_vol_bisection(self, market_price, tol=1e-6, max_iter=100):
+    def implied_vol_bisection(self, market_price, tol=1e-6, max_iter=100, return_path=False):
         """Calculate implied volatility using the bisection method"""
         low, high = 1e-6, 5.0
+        path = []
 
         for _ in range(max_iter):
             mid = (low + high) / 2
-
             test_opt = self._copy_with(sigma=mid)
             price = test_opt.black_scholes()
+            path.append(mid)
+
+            if abs(price - market_price) < tol:
+                break
 
             if price > market_price:
                 high = mid
             else:
                 low = mid
 
-            if abs(price - market_price) < tol:
-                return mid
+        return path if return_path else mid
 
-        return (low + high) / 2
-
-    def implied_vol_newton(self, market_price, tol=1e-6, max_iter=50, initial_guess = 0.02):
+    def implied_vol_newton(self, market_price, tol=1e-6, max_iter=50, initial_guess = 0.2, return_path=False):
         """Calculate implied volatility using Newton-Raphson method"""
         sigma = initial_guess
+        path = []
+
         for _ in range(max_iter):
-
-            test_option = self._copy_with(sigma=sigma)
-
-            price = test_option.black_scholes()
-            vega = test_option.vega()
+            test_opt = self._copy_with(sigma=sigma)
+            price = test_opt.black_scholes()
+            vega = test_opt.vega()
 
             diff = price - market_price
+            path.append(sigma)
 
             if abs(diff) < tol:
-                return sigma
-
+                break
+            if abs(vega) < 1e-12:
+                break  # stability guard
             sigma -= diff / vega
+
+        return path if return_path else sigma
 
     ############## Util functions ##############
     def _copy_with(self, **kwargs):
