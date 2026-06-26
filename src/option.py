@@ -123,8 +123,8 @@ class Option:
         ) / (2*h)
 
     ############## Implied Volatility ##############
-    def implied_vol(self, market_price, tol=1e-6, max_iter=100):
-
+    def implied_vol_bisection(self, market_price, tol=1e-6, max_iter=100):
+        """Calculate implied volatility using the bisection method"""
         low, high = 1e-6, 5.0
 
         for _ in range(max_iter):
@@ -142,6 +142,23 @@ class Option:
                 return mid
 
         return (low + high) / 2
+
+    def implied_vol_newton(self, market_price, tol=1e-6, max_iter=50, initial_guess = 0.02):
+        """Calculate implied volatility using Newton-Raphson method"""
+        sigma = initial_guess
+        for _ in range(max_iter):
+
+            test_option = self._copy_with(sigma=sigma)
+
+            price = test_option.black_scholes()
+            vega = test_option.vega()
+
+            diff = price - market_price
+
+            if abs(diff) < tol:
+                return sigma
+
+            sigma -= diff / vega
 
     ############## Util functions ##############
     def _copy_with(self, **kwargs):
