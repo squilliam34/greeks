@@ -16,7 +16,7 @@ class Option:
         self.sigma = sigma
         self.option_type = option_type
 
-    # Calculate d1 and d2 from Black-Scholes
+    ############## Calculate d1 and d2 from Black-Scholes ##############
     @property
     def d1(self):
         return (
@@ -37,6 +37,7 @@ class Option:
             return (np.exp(-self.r*self.T)*self.K*norm.cdf(-self.d2)
             - self.S*norm.cdf(-self.d1))
 
+    ############## Closed Form Greeks ##############
     def delta(self):
         """Calculate delta, the change in an option's price w.r.t. the underlying"""
         if self.option_type == 'call':
@@ -69,7 +70,7 @@ class Option:
         elif self.option_type == 'put':
             return -self.K*self.T*np.exp(-self.r*self.T)*norm.cdf(-self.d2)
 
-    # Finite difference greeks
+    ############## Finite difference greeks ##############
     def finite_diff_delta(self, h=0.01):
         """Calculate delta using the finite difference"""
         up = self._copy_with(S=self.S + h)
@@ -121,7 +122,28 @@ class Option:
             - down.black_scholes()
         ) / (2*h)
 
-    # Util functions
+    ############## Implied Volatility ##############
+    def implied_vol(self, market_price, tol=1e-6, max_iter=100):
+
+        low, high = 1e-6, 5.0
+
+        for _ in range(max_iter):
+            mid = (low + high) / 2
+
+            test_opt = self._copy_with(sigma=mid)
+            price = test_opt.black_scholes()
+
+            if price > market_price:
+                high = mid
+            else:
+                low = mid
+
+            if abs(price - market_price) < tol:
+                return mid
+
+        return (low + high) / 2
+
+    ############## Util functions ##############
     def _copy_with(self, **kwargs):
         params = {
             "S": self.S,
