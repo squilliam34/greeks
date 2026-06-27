@@ -165,6 +165,78 @@ class Option:
 
         return path if return_path else sigma
 
+    def implied_vol(self,
+                market_price,
+                tol=1e-6,
+                max_iter=100,
+                switch_tol=1e-2,
+                return_path=False):
+        """
+        Hybrid implied volatility solver.
+
+        Starts with bisection for guaranteed convergence,
+        then switches to Newton-Raphson once close enough.
+        """
+        low = 1e-6
+        high = 5.0
+        path = []
+
+        # Bisection Phase
+        for _ in range(max_iter):
+            sigma = 0.5 * (low + high)
+            
+            test = self._copy_with(sigma=sigma)
+            price = test.black_scholes()
+
+            path.append(sigma)
+
+            error = price - market_price
+            if abs(error) < tol:
+                return path if return_path else sigma
+            if error > 0:
+                high = sigma
+            else:
+                low = sigma
+            # Interval sufficiently small?
+            if (high - low) < switch_tol:
+                break
+
+        # Start Newton from midpoint
+        sigma = 0.5 * (low + high)
+
+        # ---- Newton Phase ----
+        for _ in range(max_iter):
+            test = self._copy_with(sigma=sigma)
+
+            price = test.black_scholes()
+            vega = test.vega()
+            error = price - market_price
+
+            path.append(sigma)
+
+            if abs(error) < tol:
+                break
+            if abs(vega) < 1e-12:
+                break
+            new_sigma = sigma - error / vega
+
+            # Reject Newton step if it jumps outside bracket
+            if new_sigma <= low or new_sigma >= high:
+                sigma = 0.5 * (low + high)
+            else:
+                sigma = new_sigma
+
+            # Update bracket
+            test = self._copy_with(sigma=sigma)
+            price = test.black_scholes()
+
+            if price > market_price:
+                high = sigma
+            else:
+                low = sigma
+
+        return path if return_path else sigma
+
     ############## Util functions ##############
     def _copy_with(self, **kwargs):
         params = {
