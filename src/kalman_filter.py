@@ -9,10 +9,10 @@ class KalmanFilter(object):
         self.n = F.shape[1]
         self.m = Z.shape[1]
 
-        # The transition matrix, set F = 1 - like a random walk
+        # The transition matrix
         self.F = F
 
-        # Observation model, set Z = 1
+        # Observation model
         self.Z = Z
 
         # Process noise - Hidden Pattern
