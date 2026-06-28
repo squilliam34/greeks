@@ -173,7 +173,7 @@ if not df.empty:
     df['date'] = pd.to_datetime(df['date'])
     df = df.sort_values(['date', 'ticker']).reset_index(drop=True)
 
-out_path = os.path.join(OUTPUT_DIR, 'spy_options_rolling_atm_clean.csv')
+out_path = os.path.join(OUTPUT_DIR, 'spy_option.csv')
 df.to_csv(out_path, index=False)
 
 print(f'\nSaved to: {out_path}')
